@@ -65,7 +65,7 @@ function BookForm({ obj = initialState }) {
       }
 
       if (invoicedAmount > 0) {
-        updatedInput.hourly_rate = (invoicedAmount / hoursWorked).toFixed(2);
+        updatedInput.hourly_rate = (invoicedAmount / hoursWorked).toFixed(4); // changed this to 4 decimal places
       }
     }
 
