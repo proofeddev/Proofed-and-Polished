@@ -98,7 +98,7 @@ export default function BookDetails() {
             <div className="my-3">
               <p><strong>Word Count:</strong> {book.word_count}</p>
               <p><strong>Hours:</strong> {book.hours} | <strong>Hourly Rate:</strong> ${book.hourly_rate}</p>
-              <p><strong>Rate:</strong> {Number(book.invoiced_amount / book.word_count).toFixed(2)} | <strong>Invoiced:</strong> ${book.invoiced_amount}</p>
+              <p><strong>Rate:</strong> {Number(book.invoiced_amount / book.word_count).toFixed(3)} | <strong>Invoiced:</strong> ${book.invoiced_amount}</p>
               <p><strong>WPH:</strong> {book.wph}</p>
             </div>
           )}
