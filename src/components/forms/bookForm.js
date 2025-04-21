@@ -24,6 +24,7 @@ const initialState = {
   hourly_rate: '',
   invoiced_amount: '',
   wph: '',
+  rate: '',
   status: '',
   posted_to_facebook: '',
   posted_to_website: ''
@@ -65,7 +66,7 @@ function BookForm({ obj = initialState }) {
       }
 
       if (invoicedAmount > 0) {
-        updatedInput.hourly_rate = (invoicedAmount / hoursWorked).toFixed(4); // changed this to 4 decimal places
+        updatedInput.hourly_rate = (invoicedAmount / hoursWorked).toFixed(2);
       }
     }
 
@@ -195,6 +196,18 @@ function BookForm({ obj = initialState }) {
                 </Col>
 
                 <Col>
+                  <FloatingLabel controlId="rate" label="Rate ($ per word)">
+                    <Form.Control
+                      type="number"
+                      step="0.001"
+                      name="rate"
+                      value={formInput.rate || ''}
+                      onChange={handleChange}
+                    />
+                  </FloatingLabel>
+                </Col>
+
+                <Col>
                   <FloatingLabel controlId="status" label="Service">
                     <Form.Select name="status" value={formInput.status} onChange={handleChange}>
                       <option value="">Select Service</option>
@@ -249,6 +262,7 @@ BookForm.propTypes = {
     hourly_rate: PropTypes.string,
     invoiced_amount: PropTypes.string,
     wph: PropTypes.string,
+    rate: PropTypes.string,
     status: PropTypes.string,
     posted_to_facebook: PropTypes.string,
     posted_to_website: PropTypes.string
