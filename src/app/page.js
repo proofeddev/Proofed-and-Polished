@@ -25,7 +25,7 @@ function Home() {
       setBooks(bookList);
       setFilteredBooks(bookList);
 
-      // Extract authors and filter those with 5 or more books
+      // Extract authors and filter those with at least 1 book
       const authorBookCount = bookList.reduce((acc, book) => {
         const authorKey = book.author || 'Unknown Author';
         if (!acc[authorKey]) {
@@ -35,17 +35,18 @@ function Home() {
         return acc;
       }, {});
 
-      // Filter authors with 5 or more books
-      const authorsWith5OrMoreBooks = Object.entries(authorBookCount)
-        .filter(([author, books]) => books.length >= 5)
+      // Filter authors with 1 or more books and sort alphabetically
+      const authorsWithBooks = Object.entries(authorBookCount)
+        .filter(([author, books]) => books.length >= 1) // Changed to >= 1
         .map(([author, books]) => ({
           name: author,
           books: books,
           pen_name: books[0]?.pen_name || '', // Ensuring that we use pen_name from the first book in the list
-        }));
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name)); // Sort authors alphabetically
 
-      setFilteredAuthors(authorsWith5OrMoreBooks);
-      setAllAuthors(authorsWith5OrMoreBooks); // Save all authors to reset the filtered list
+      setFilteredAuthors(authorsWithBooks);
+      setAllAuthors(authorsWithBooks); // Save all authors to reset the filtered list
       setLoading(false);
     });
   }, []);
@@ -166,7 +167,7 @@ function Home() {
             )}
           </div>
 
-          {/* Right Card - Authors with 5 or more books */}
+          {/* Right Card - Authors with 1 or more books */}
           <div style={{ flex: 1 }}>
             <Form.Control
               type="text"
