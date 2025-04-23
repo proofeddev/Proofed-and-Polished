@@ -14,7 +14,7 @@ function Home() {
   const [books, setBooks] = useState([]);
   const [filteredBooks, setFilteredBooks] = useState([]);
   const [filteredAuthors, setFilteredAuthors] = useState([]);
-  const [allAuthors, setAllAuthors] = useState([]);  // Store all authors
+  const [allAuthors, setAllAuthors] = useState([]);
   const [bookSearchTerm, setBookSearchTerm] = useState('');
   const [authorSearchTerm, setAuthorSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
@@ -22,31 +22,34 @@ function Home() {
 
   useEffect(() => {
     getBooks().then((bookList) => {
-      setBooks(bookList);
-      setFilteredBooks(bookList);
-
-      // Extract authors and filter those with at least 1 book
-      const authorBookCount = bookList.reduce((acc, book) => {
-        const authorKey = book.author || 'Unknown Author';
-        if (!acc[authorKey]) {
-          acc[authorKey] = [];
+      const sortedBooks = [...bookList].sort((a, b) => {
+        return new Date(b.date) - new Date(a.date);
+      });
+    
+      setBooks(sortedBooks);
+      setFilteredBooks(sortedBooks);
+      // Group books by author + pen_name combo 
+      const authorGroups = {};
+      bookList.forEach((book) => {
+        const author = book.author || '';
+        const penName = book.pen_name || '';
+        const key = `${author}|||${penName}`;
+        if (!authorGroups[key]) {
+          authorGroups[key] = {
+            author,
+            pen_name: penName,
+            books: [],
+          };
         }
-        acc[authorKey].push(book);
-        return acc;
-      }, {});
+        authorGroups[key].books.push(book);
+      });
 
-      // Filter authors with 1 or more books and sort alphabetically
-      const authorsWithBooks = Object.entries(authorBookCount)
-        .filter(([author, books]) => books.length >= 1) // Changed to >= 1
-        .map(([author, books]) => ({
-          name: author,
-          books: books,
-          pen_name: books[0]?.pen_name || '', // Ensuring that we use pen_name from the first book in the list
-        }))
-        .sort((a, b) => a.name.localeCompare(b.name)); // Sort authors alphabetically
+      const authorEntries = Object.values(authorGroups).sort((a, b) =>
+        a.author.localeCompare(b.author)
+      );
 
-      setFilteredAuthors(authorsWithBooks);
-      setAllAuthors(authorsWithBooks); // Save all authors to reset the filtered list
+      setFilteredAuthors(authorEntries);
+      setAllAuthors(authorEntries);
       setLoading(false);
     });
   }, []);
@@ -63,39 +66,29 @@ function Home() {
     }
 
     if (authorSearchTerm.trim() === '') {
-      // Reset to all authors if search term is cleared
       setFilteredAuthors(allAuthors);
     } else {
       const lowerSearch = authorSearchTerm.toLowerCase();
-      const filteredAuthorsList = allAuthors.filter((author) =>
-        author.name.toLowerCase().includes(lowerSearch) || 
-        author.pen_name.toLowerCase().includes(lowerSearch)  // Include pen_name in the search
+      const filteredAuthorsList = allAuthors.filter((entry) =>
+        entry.author.toLowerCase().includes(lowerSearch) ||
+        entry.pen_name.toLowerCase().includes(lowerSearch)
       );
       setFilteredAuthors(filteredAuthorsList);
     }
   }, [bookSearchTerm, authorSearchTerm, books, allAuthors]);
 
   return (
-    <div
-      className="text-center d-flex flex-column align-items-center"
-      style={{ minHeight: '100vh', padding: '40px' }}
-    >
-      <div
-        className="w-100"
-        style={{
-          maxWidth: '95%',
-          backgroundColor: '#D9D9D9',
-          borderRadius: '30px',
-          padding: '40px',
-          boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
-        }}
-      >
-        {/* Container for both cards, flexing side by side */}
+    <div className="text-center d-flex flex-column align-items-center" style={{ minHeight: '100vh', padding: '40px' }}> //order books newest on top to lowest bottom
+      <div className="w-100" style={{
+        maxWidth: '95%',
+        backgroundColor: '#D9D9D9',
+        borderRadius: '30px',
+        padding: '40px',
+        boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
+      }}>
         <div className="d-flex justify-content-between gap-4">
-          
-          {/* Left Card - Book List */}
+          {/* Book List */}
           <div style={{ flex: 1 }}>
-            {/* Horizontal layout for Search Bar and Total Books Counter */}
             <div className="d-flex justify-content-between mb-3">
               <Form.Control
                 type="text"
@@ -167,77 +160,80 @@ function Home() {
             )}
           </div>
 
-          {/* Right Card - Authors with 1 or more books */}
-          <div style={{ flex: 1 }}>
-            <Form.Control
-              type="text"
-              placeholder="Search authors..."
-              value={authorSearchTerm}
-              onChange={(e) => setAuthorSearchTerm(e.target.value)}
-              style={{
-                maxWidth: '300px',
-                borderRadius: '30px',
-                padding: '10px 15px',
-                marginBottom: '20px',
-              }}
-            />
-            {loading ? (
-              <Spinner animation="border" variant="dark" />
-            ) : filteredAuthors.length === 0 ? (
-              <p className="text-black">No authors found.</p>
-            ) : (
-              <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
-                <ul className="list-group">
-                  {filteredAuthors.map((author) => (
-                    <li
-                      key={author.name}
-                      className="list-group-item d-flex justify-content-between align-items-center"
-                    >
-                      <div>
-                        <strong>{author.name} | Pen Name: {author.pen_name || 'N/A'} : {author.books.length}</strong>
-                      </div>
-
-                      <Dropdown>
-                        <Dropdown.Toggle
-                          variant="light"
-                          size="sm"
-                          style={{
-                            borderRadius: '50px',
-                            backgroundColor: '#D9D9D9',
-                            color: 'black',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            width: '80px',
-                            height: '36px',
-                            border: 'none',
-                            padding: '0 12px',
-                            fontWeight: '500',
-                          }}
-                        >
-                          <RiMenu5Fill size={22} />
-                        </Dropdown.Toggle>
-
-                        <Dropdown.Menu
-                          style={{
-                            maxHeight: '200px',
-                            overflowY: 'auto',
-                            minWidth: '300px', // Increase width of dropdown
-                          }}
-                        >
-                          {author.books.map((book) => (
-                            <Dropdown.Item key={book.firebaseKey} onClick={() => router.push(`/book/${book.firebaseKey}`)}>
-                              {book.title}
-                            </Dropdown.Item>
-                          ))}
-                        </Dropdown.Menu>
-                      </Dropdown>
-                    </li>
-                  ))}
-                </ul>
+                      {/* Authors List */}
+            <div style={{ flex: 1 }}>
+              <div className="mb-3">
+                <Form.Control
+                  type="text"
+                  placeholder="Search authors..."
+                  value={authorSearchTerm}
+                  onChange={(e) => setAuthorSearchTerm(e.target.value)}
+                  style={{
+                    maxWidth: '300px',
+                    borderRadius: '30px',
+                    padding: '10px 15px',
+                  }}
+                />
               </div>
-            )}
-          </div>
+              {loading ? (
+                <Spinner animation="border" variant="dark" />
+              ) : filteredAuthors.length === 0 ? (
+                <p className="text-black">No authors found.</p>
+              ) : (
+                <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+                  <ul className="list-group">
+                    {filteredAuthors.map((entry) => (
+                      <li
+                        key={`${entry.author}-${entry.pen_name}`}
+                        className="list-group-item d-flex justify-content-between align-items-center"
+                      >
+                        <div>
+                          <strong>
+                            {entry.author}
+                            {entry.pen_name && ` | ${entry.pen_name}`} : {entry.books.length}
+                          </strong>
+                        </div>
+                        <Dropdown>
+                          <Dropdown.Toggle
+                            variant="light"
+                            size="sm"
+                            style={{
+                              borderRadius: '50px',
+                              backgroundColor: '#D9D9D9',
+                              color: 'black',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              width: '80px',
+                              height: '36px',
+                              border: 'none',
+                              padding: '0 12px',
+                              fontWeight: '500',
+                            }}
+                          >
+                            <RiMenu5Fill size={22} />
+                          </Dropdown.Toggle>
+                          <Dropdown.Menu
+                            style={{
+                              maxHeight: '200px',
+                              overflowY: 'auto',
+                              minWidth: '300px',
+                            }}
+                          >
+                            {entry.books.map((book) => (
+                              <Dropdown.Item key={book.firebaseKey} onClick={() => router.push(`/book/${book.firebaseKey}`)}>
+                                {book.title}
+                              </Dropdown.Item>
+                            ))}
+                          </Dropdown.Menu>
+                        </Dropdown>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+
         </div>
       </div>
     </div>
